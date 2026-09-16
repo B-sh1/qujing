@@ -17,6 +17,8 @@ pnpm preview  # 预览构建产物 http://localhost:4173
 
 站点是纯静态产物，仓库里已经放了 `.github/workflows/deploy.yml`：推到 `main` 就会自动构建并发布，之后每次改文案 / 换图推一次就自动更新。
 
+当前线上地址：**https://b-sh1.github.io/qujing/**（仓库：https://github.com/B-sh1/qujing ）
+
 1. 在 GitHub 上建一个**空仓库**（不勾 README、不勾 .gitignore），例如叫 `qujing`。
 2. 本地关联并推送：
 
@@ -34,6 +36,8 @@ pnpm preview  # 预览构建产物 http://localhost:4173
 - 文案里引用图片 / 视频必须走 `src/data/content.js` 导出的 `asset()`，别写 `/images/xxx.jpg` 这种从域名根开始的绝对路径——挂到 `/<仓库名>/` 子路径下会 404。
 - `index.html` 里的 `og:image` / `twitter:image` 还是相对地址，微信、微博这类抓缩略图的地方抓不到；上线后换成正式域名下的绝对地址即可。
 - 仓库里有 4 段背景视频（合计约 27MB），首次 clone 和 CI 构建会稍慢一点。GitHub Pages 的限额是单文件 100MB、站点总量 1GB，目前远没到。
+- 这台机器直连 github.com 不通，要走 Clash Verge 的本地代理（HTTP 端口 60471）。仓库的 git 配置里已经写了 `http.proxy=http://127.0.0.1:60471`，推送前把 Clash 的「系统代理」打开即可；以后换了代理端口，用 `git config http.proxy <新地址>` 改，不需要代理时 `git config --unset http.proxy`。CI 在 GitHub 的机器上跑，不受这个影响。
+- CI 里的 pnpm 版本固定在 `11.19.0`：低版本读不了 `pnpm-workspace.yaml` 里的新版字段，会在 `pnpm store path` 那步直接报 `packages field missing or empty`。
 
 ## 页面结构
 
