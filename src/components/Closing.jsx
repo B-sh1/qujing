@@ -1,11 +1,19 @@
 import { contact } from "../data/content.js";
 import { Reveal } from "./Reveal.jsx";
+import { srcSetFor } from "../data/media.js";
 
 export default function Closing() {
   return (
     <section className="closing" id="contact">
         <div className="closing__bg" aria-hidden="true">
-        <img src={contact.image} alt="" loading="lazy" decoding="async" />
+        <img
+          src={contact.image}
+          srcSet={srcSetFor(contact.image)}
+          sizes="100vw"
+          alt=""
+          loading="lazy"
+          decoding="async"
+        />
       </div>
       <div className="closing__veil" aria-hidden="true" />
       <div className="closing__tint" aria-hidden="true" />

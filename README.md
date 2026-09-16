@@ -70,18 +70,34 @@ pnpm preview  # 预览构建产物 http://localhost:4173
 首屏和「山水曲靖」封面共用 `src/components/MediaCover.jsx`，数据分别在 `content.js` 的 `hero` 和 `sceneryCover`。共用行为：
 
 - 一律静音自动播放，不会出声；
+- **视频源等这一屏快滚到了才挂上**（`IntersectionObserver` + 一屏提前量）。整页四段封面视频原来在首屏就一起下载，合计 25.8MB，手机流量和首屏速度都扛不住；现在首屏只下当前这一段。
+- 开了「省流模式」、或 `effectiveType` 是 2G 时，直接不放视频，用封面静帧；
 - 滑出视口自动暂停、回到视口再继续（`IntersectionObserver`，阈值 12%）；
 - 取不到视频、或用户开了「减少动态效果」时，自动回落到静帧，不会白屏；
 - 背景视差、文字上浮、底部渐隐到页面底色，两处完全一致。
 
 | 文件 | 用途 | 规格 | 说明 |
 | --- | --- | --- | --- |
-| `public/videos/hero.mp4` | 首屏「清凉曲靖」 | 1920×1080 / 32.8s / 10.3MB | 右上角原有「抚仙居士 + bilibili」台标，用 `videoCrop` 放大 1.25 倍、以左下角为原点裁掉右侧与上方各 20%，把台标推出可视区 |
-| `public/videos/mountain.mp4` | 「山水曲靖」封面 | 1600×900 / 20.0s / 4.0MB | 由 2 分 52 秒的源片裁出前 20 秒、去掉音轨、CRF 25 重压；`clipSeconds: 20` 是兜底，换更长的源片也只在 0–20 秒循环 |
-| `public/videos/field.mp4` | 「田野曲靖」封面 | 1600×900 / 20.0s / 4.6MB | 由「田里的人和动物」的 31–51 秒裁出、去掉音轨、CRF 25 重压；静帧兜底 `public/images/field-cover.jpg` 取自同一段视频的第 9 秒 |
-| `public/videos/mutual.mp4` | 「互助曲靖」封面 | 1920×1080 / 13.9s / 7.0MB | 原片直接用，未重压（时长够短）。画面右上角有「弄勒铮不戳 + bilibili」台标（x≈0.79 起）、右下角有「SENJUE」（x≈0.735 起），用 `videoCrop: { keepWidth: 0.72 }` 只保留左侧 72% 把两处一起切掉；静帧兜底 `public/images/mutual-cover.jpg` 取自第 3.5 秒 |
+| `public/videos/hero.mp4` | 首屏「清凉曲靖」 | 1600×900 / 32.8s / 2.6MB | 右上角原有「抚仙居士 + bilibili」台标，用 `videoCrop` 放大 1.25 倍、以左下角为原点裁掉右侧与上方各 20%，把台标推出可视区 |
+| `public/videos/mountain.mp4` | 「山水曲靖」封面 | 1280×720 / 20.0s / 1.1MB | 由 2 分 52 秒的源片裁出前 20 秒；`clipSeconds: 20` 是兜底，换更长的源片也只在 0–20 秒循环 |
+| `public/videos/field.mp4` | 「田野曲靖」封面 | 1280×720 / 20.0s / 1.2MB | 由「田里的人和动物」的 31–51 秒裁出；静帧兜底 `public/images/field-cover.jpg` 取自同一段视频的第 9 秒 |
+| `public/videos/mutual.mp4` | 「互助曲靖」封面 | 1360×765 / 13.9s / 3.3MB | 画面右上角有「弄勒铮不戳 + bilibili」台标（x≈0.79 起）、右下角有「SENJUE」（x≈0.735 起），用 `videoCrop: { keepWidth: 0.72 }` 只保留左侧 72% 把两处一起切掉；静帧兜底 `public/images/mutual-cover.jpg` 取自第 3.5 秒 |
 
 换片：把新文件放进 `public/videos/` 覆盖同名文件即可。`.mp4` / `.webm` 都支持，浏览器按 `videoSources` 顺序尝试。如果新片也有水印，改 `videoCrop` 的 `scale` / `origin`；如果要改播放区间，改 `clipSeconds`。
+
+四段片的编码参数写在 `scripts/optimize-videos.mjs` 里（`pnpm optimize:videos` 重跑）。它们都压在深色蒙版下面，按 1280–1600 宽 + CRF 29–33 重编就能省掉三分之二的体积：原来合计 25.8MB，现在 8.3MB。原片会先备份到 `_qa/video-originals/`（该目录不进仓库）。
+
+## 图片与手机流量
+
+实拍图原来是「一张桌面尺寸的 JPEG 给所有设备」，手机上一个几百像素宽的格子也要下 940KB。现在：
+
+- `scripts/optimize-images.mjs` 把**页面真正引用**的每张图转成 720 / 1080 / 1440 三档 WebP（比原图还小的档位不生成，不放大），并写出 `src/data/imageVariants.js` 清单；
+- 组件里统一走 `src/data/media.js` 的 `srcSetFor()` / `sizesFor()` 拼 `srcSet` + `sizes`，浏览器按屏幕宽度和 DPR 自己挑一档；不支持 WebP 的老浏览器继续用原 JPEG 兜底；
+- 原 JPEG 全部保留，没有被页面引用的备选素材不生成 WebP。
+
+换了图之后跑一次 `pnpm optimize:images` 重新生成即可（它是幂等的，还会顺手清掉不再需要的档位）。
+
+实测（iPhone 视口 390×844、DPR 3、4G 节流）：首屏从 **27.34MB** 降到 **3.27MB**，滚完整页从 40MB 上下降到 **5.91MB**。
 
 `videoCrop` 有两种写法，按水印在画面的位置选：
 

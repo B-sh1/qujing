@@ -30,7 +30,11 @@ export default function Economy() {
               <p className="card__body">{feature.body}</p>
               <Keys keys={feature.keys} />
             </div>
-            <RevealMedia src={feature.image} alt={feature.alt} />
+            <RevealMedia
+              src={feature.image}
+              alt={feature.alt}
+              sizes="(max-width: 760px) 100vw, 520px"
+            />
           </Reveal>
 
           {cards.map((card, i) =>
@@ -47,7 +51,11 @@ export default function Economy() {
                   <p className="card__body">{card.body}</p>
                   <Keys keys={card.keys} />
                 </div>
-                <RevealMedia src={card.image} alt={card.alt} />
+                <RevealMedia
+                  src={card.image}
+                  alt={card.alt}
+                  sizes="(max-width: 760px) 100vw, 520px"
+                />
               </Reveal>
             ) : (
               <Reveal className="card" key={card.title} delay={0.05 + i * 0.04}>

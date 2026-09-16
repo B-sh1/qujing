@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { EASE } from "./Reveal.jsx";
+import { srcSetFor } from "../data/media.js";
 
 /**
  * 全屏媒体封面：首屏和章节大图共用同一套视觉与行为。
@@ -29,9 +30,10 @@ export default function MediaCover({ data }) {
   const videoRef = useRef(null);
   const reduce = useReducedMotion();
   const [videoOk, setVideoOk] = useState(true);
+  const [armed, setArmed] = useState(false);
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start start", "end start"] });
 
-  const showVideo = videoOk && !reduce && videoSources?.length > 0;
+  const showVideo = videoOk && !reduce && armed && videoSources?.length > 0;
   const crop = videoCrop?.scale && videoCrop.scale !== 1 ? videoCrop : null;
   // keepWidth：只保留画面左侧这一比例（0–1），其余裁掉。
   // 与 scale/origin 的放大裁切不同，它保持画面比例不变，用来去掉角落的水印/台标。
@@ -49,6 +51,33 @@ export default function MediaCover({ data }) {
   const bgScale = useTransform(scrollYProgress, [0, 1], [1, 1.12]);
   const innerY = useTransform(scrollYProgress, [0, 1], [0, -46]);
   const innerOpacity = useTransform(scrollYProgress, [0, 0.75], [1, 0]);
+
+  // 视频源要等这一屏快滚到了才挂上：整页四个封面视频原本在首屏就一起下载，
+  // 合计 25MB 起，手机上光等这个就够呛。这里留一屏的提前量，滚到附近才开始拉。
+  useEffect(() => {
+    if (armed) return undefined;
+    const section = sectionRef.current;
+    if (!section || typeof IntersectionObserver === "undefined") {
+      setArmed(true);
+      return undefined;
+    }
+
+    // 开了省流模式、或者确实在 2G 上，就不放背景视频，直接用封面静帧。
+    const conn = navigator.connection;
+    if (conn?.saveData || /(^|-)2g$/.test(conn?.effectiveType ?? "")) return undefined;
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setArmed(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: "100% 0px" }
+    );
+    io.observe(section);
+    return () => io.disconnect();
+  }, [armed]);
 
   // 滑出视口就暂停，回到视口再继续。
   useEffect(() => {
@@ -103,7 +132,7 @@ export default function MediaCover({ data }) {
       muted
       loop
       playsInline
-      preload="auto"
+      preload="metadata"
       disablePictureInPicture
       onError={() => setVideoOk(false)}
       aria-hidden="true"
@@ -129,6 +158,8 @@ export default function MediaCover({ data }) {
           className="cover__poster"
           style={{ objectPosition: focus }}
           src={image}
+          srcSet={srcSetFor(image)}
+          sizes="100vw"
           alt={alt}
           fetchPriority={priority ? "high" : "auto"}
           loading={priority ? "eager" : "lazy"}

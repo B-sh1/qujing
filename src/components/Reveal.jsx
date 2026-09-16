@@ -1,4 +1,5 @@
 import { motion, useReducedMotion } from "framer-motion";
+import { sizesFor, srcSetFor } from "../data/media.js";
 
 export const EASE = [0.22, 0.61, 0.36, 1];
 
@@ -19,8 +20,17 @@ export function Reveal({ children, className, delay = 0, y = 26, amount = 0.2, a
   );
 }
 
-export function RevealMedia({ src, alt, className = "", delay = 0, priority = false, style }) {
+export function RevealMedia({
+  src,
+  alt,
+  className = "",
+  delay = 0,
+  priority = false,
+  style,
+  sizes,
+}) {
   const reduce = useReducedMotion();
+  const srcSet = srcSetFor(src);
 
   return (
     <motion.div
@@ -33,6 +43,8 @@ export function RevealMedia({ src, alt, className = "", delay = 0, priority = fa
     >
       <motion.img
         src={src}
+        srcSet={srcSet}
+        sizes={srcSet ? sizes ?? sizesFor(className) : undefined}
         alt={alt}
         loading={priority ? "eager" : "lazy"}
         decoding="async"
