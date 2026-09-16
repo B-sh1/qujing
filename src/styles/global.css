@@ -502,6 +502,63 @@ button {
   );
 }
 
+/* 封面视频的播放按钮：默认只出静帧，点了才去加载视频 */
+
+.cover__play {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: 44%;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+  color: var(--jade-pale);
+  transition: opacity 0.5s var(--ease);
+}
+
+.cover__play-ring {
+  display: grid;
+  place-items: center;
+  width: clamp(58px, 16vw, 76px);
+  height: clamp(58px, 16vw, 76px);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: rgba(5, 19, 14, 0.42);
+  backdrop-filter: blur(3px);
+  transition: transform 0.5s var(--ease), border-color 0.5s var(--ease),
+    background 0.5s var(--ease);
+}
+
+.cover__play-ring svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* 播放中把控件收敛一点，鼠标移上去或键盘聚焦再亮回来 */
+.cover__play[data-state="playing"] {
+  opacity: 0.4;
+}
+
+.cover__play:hover,
+.cover__play:focus-visible {
+  opacity: 1;
+}
+
+.cover__play:hover .cover__play-ring {
+  transform: scale(1.05);
+  border-color: var(--jade-soft);
+  background: rgba(5, 19, 14, 0.62);
+}
+
+.cover__play-label {
+  font-size: 11.5px;
+  letter-spacing: 0.24em;
+  color: var(--sage);
+}
+
 .cover__inner {
   position: relative;
   z-index: 2;
@@ -1211,6 +1268,15 @@ button {
 
   .scroll-cue__track::after {
     animation: none;
+    transform: none;
+  }
+
+  .cover__play-ring,
+  .cover__play {
+    transition: none;
+  }
+
+  .cover__play:hover .cover__play-ring {
     transform: none;
   }
 

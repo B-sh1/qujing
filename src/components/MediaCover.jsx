@@ -22,6 +22,7 @@ export default function MediaCover({ data }) {
     clipSeconds,
     scrollHref,
     scrollLabel = "向下",
+    playLabel = "播放视频",
     priority = false,
     headingLevel = 2,
   } = data;
@@ -30,10 +31,14 @@ export default function MediaCover({ data }) {
   const videoRef = useRef(null);
   const reduce = useReducedMotion();
   const [videoOk, setVideoOk] = useState(true);
-  const [armed, setArmed] = useState(false);
+  // 只有用户点了播放才去挂视频源：没点之前页面里根本不出现 <video>，也就不可能偷偷下载。
+  const [started, setStarted] = useState(false);
+  // playing 记的是「用户的意图」：滚动离开只暂停，滚回来还按这个意图继续。
+  const [playing, setPlaying] = useState(false);
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start start", "end start"] });
 
-  const showVideo = videoOk && !reduce && armed && videoSources?.length > 0;
+  const hasVideo = videoOk && videoSources?.length > 0;
+  const showVideo = hasVideo && started;
   const crop = videoCrop?.scale && videoCrop.scale !== 1 ? videoCrop : null;
   // keepWidth：只保留画面左侧这一比例（0–1），其余裁掉。
   // 与 scale/origin 的放大裁切不同，它保持画面比例不变，用来去掉角落的水印/台标。
@@ -52,34 +57,19 @@ export default function MediaCover({ data }) {
   const innerY = useTransform(scrollYProgress, [0, 1], [0, -46]);
   const innerOpacity = useTransform(scrollYProgress, [0, 0.75], [1, 0]);
 
-  // 视频源要等这一屏快滚到了才挂上：整页四个封面视频原本在首屏就一起下载，
-  // 合计 25MB 起，手机上光等这个就够呛。这里留一屏的提前量，滚到附近才开始拉。
+  // 点了播放才开始加载，并且开始时立刻播。
   useEffect(() => {
-    if (armed) return undefined;
-    const section = sectionRef.current;
-    if (!section || typeof IntersectionObserver === "undefined") {
-      setArmed(true);
-      return undefined;
+    const el = videoRef.current;
+    if (!showVideo || !el) return;
+    if (!playing) {
+      el.pause();
+      return;
     }
+    const played = el.play();
+    if (played && typeof played.catch === "function") played.catch(() => {});
+  }, [showVideo, playing]);
 
-    // 开了省流模式、或者确实在 2G 上，就不放背景视频，直接用封面静帧。
-    const conn = navigator.connection;
-    if (conn?.saveData || /(^|-)2g$/.test(conn?.effectiveType ?? "")) return undefined;
-
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setArmed(true);
-          io.disconnect();
-        }
-      },
-      { rootMargin: "100% 0px" }
-    );
-    io.observe(section);
-    return () => io.disconnect();
-  }, [armed]);
-
-  // 滑出视口就暂停，回到视口再继续。
+  // 滑出视口就暂停，回到视口再继续（只在用户本来就让它播的时候）。
   useEffect(() => {
     const el = videoRef.current;
     const section = sectionRef.current;
@@ -90,8 +80,10 @@ export default function MediaCover({ data }) {
     const io = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          const played = el.play();
-          if (played && typeof played.catch === "function") played.catch(() => {});
+          if (playing) {
+            const played = el.play();
+            if (played && typeof played.catch === "function") played.catch(() => {});
+          }
         } else if (!el.paused) {
           el.pause();
         }
@@ -101,7 +93,16 @@ export default function MediaCover({ data }) {
 
     io.observe(section);
     return () => io.disconnect();
-  }, [showVideo]);
+  }, [showVideo, playing]);
+
+  const toggleVideo = () => {
+    if (!started) {
+      setStarted(true);
+      setPlaying(true);
+      return;
+    }
+    setPlaying((v) => !v);
+  };
 
   // 只播前 clipSeconds 秒：即使换了更长的源片，也只在设定区间内循环。
   useEffect(() => {
@@ -128,11 +129,10 @@ export default function MediaCover({ data }) {
           ? { transform: `scale(${crop.scale})`, transformOrigin: crop.origin }
           : null),
       }}
-      autoPlay
       muted
       loop
       playsInline
-      preload="metadata"
+      preload="auto"
       disablePictureInPicture
       onError={() => setVideoOk(false)}
       aria-hidden="true"
@@ -168,6 +168,31 @@ export default function MediaCover({ data }) {
       </motion.div>
 
       <div className="cover__veil" aria-hidden="true" />
+
+      {hasVideo ? (
+        <button
+          type="button"
+          className="cover__play"
+          data-state={started && playing ? "playing" : "idle"}
+          onClick={toggleVideo}
+          aria-pressed={started && playing}
+          aria-label={started && playing ? "暂停封面视频" : playLabel}
+        >
+          <span className="cover__play-ring" aria-hidden="true">
+            {started && playing ? (
+              <svg viewBox="0 0 16 16" focusable="false">
+                <rect x="4.5" y="3.5" width="2.4" height="9" fill="currentColor" />
+                <rect x="9.1" y="3.5" width="2.4" height="9" fill="currentColor" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 16 16" focusable="false">
+                <path d="M5.6 3.4 12.4 8l-6.8 4.6z" fill="currentColor" />
+              </svg>
+            )}
+          </span>
+          <span className="cover__play-label">{started && playing ? "暂停" : playLabel}</span>
+        </button>
+      ) : null}
 
       <motion.div
         className="container cover__inner"

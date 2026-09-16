@@ -31,6 +31,7 @@ export const hero = {
   // 换片之后按新水印的位置调这两个值即可。
   videoCrop: { scale: 1.25, origin: "0% 100%" },
   scrollHref: "#summer",
+  playLabel: "播放曲靖夜景",
   priority: true,
   headingLevel: 1,
 };
@@ -50,6 +51,7 @@ export const sceneryCover = {
   videoSources: [{ src: asset("/videos/mountain.mp4"), type: "video/mp4" }],
   clipSeconds: 20,
   scrollHref: "#scenery-detail",
+  playLabel: "播放山水",
 };
 
 // 03 章「田野有声」之前的全屏大图。视频取自「田里的人和动物」的 31–51 秒，
@@ -66,6 +68,7 @@ export const ruralCover = {
   videoSources: [{ src: asset("/videos/field.mp4"), type: "video/mp4" }],
   clipSeconds: 20,
   scrollHref: "#rural-detail",
+  playLabel: "播放田野",
 };
 
 // 04 章「山货出山」之前的全屏大图。源片 13.9 秒、1920×1080。
@@ -84,6 +87,7 @@ export const economyCover = {
   videoSources: [{ src: asset("/videos/mutual.mp4"), type: "video/mp4" }],
   videoCrop: { keepWidth: 0.72 },
   scrollHref: "#economy-detail",
+  playLabel: "播放秋收",
 };
 
 export const scenery = {
