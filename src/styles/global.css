@@ -537,14 +537,19 @@ button {
   height: 16px;
 }
 
-/* 播放中把控件收敛一点，鼠标移上去或键盘聚焦再亮回来 */
+/* 播放中把播放键整个收掉；键盘 Tab 聚焦时仍然露出来，方便继续暂停 */
 .cover__play[data-state="playing"] {
-  opacity: 0.4;
+  opacity: 0;
+  pointer-events: none;
 }
 
-.cover__play:hover,
-.cover__play:focus-visible {
+.cover__play:hover {
   opacity: 1;
+}
+
+.cover__play[data-state="playing"]:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .cover__play:hover .cover__play-ring {

@@ -104,6 +104,13 @@ export default function MediaCover({ data }) {
     setPlaying((v) => !v);
   };
 
+  // 播放时按钮会隐藏，点封面空白处就能暂停（链接、按钮自己的点击不参与）。
+  const onCoverClick = (event) => {
+    if (!started || !playing) return;
+    if (event.target.closest("a, button")) return;
+    setPlaying(false);
+  };
+
   // 只播前 clipSeconds 秒：即使换了更长的源片，也只在设定区间内循环。
   useEffect(() => {
     if (!showVideo || !clipSeconds) return undefined;
@@ -152,7 +159,7 @@ export default function MediaCover({ data }) {
   );
 
   return (
-    <section className="cover" id={id} ref={sectionRef}>
+    <section className="cover" id={id} ref={sectionRef} onClick={onCoverClick}>
       <motion.div className="cover__bg" style={reduce ? undefined : { y: bgY, scale: bgScale }}>
         <img
           className="cover__poster"

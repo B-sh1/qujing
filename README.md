@@ -89,7 +89,7 @@ pnpm deploy:pages   # = wrangler pages deploy dist --project-name=qujing --branc
 首屏和「山水曲靖」封面共用 `src/components/MediaCover.jsx`，数据分别在 `content.js` 的 `hero` 和 `sceneryCover`。共用行为：
 
 - **默认不加载视频**：封面只出静帧 + 一个播放按钮，点了才挂 `<video>` 并开始播。没点之前 DOM 里根本没有 `<video>` 元素，也不会发出任何 `.mp4` 请求——首屏因此从 27.34MB 降到 0.65MB。
-- 播放中按钮变成「暂停」并淡到 40% 透明度，鼠标移上去或键盘聚焦会亮回来；再点一次就是暂停。
+- 播放中播放键整个隐藏，画面上不留控件；想暂停就点封面空白处（链接和按钮自身的点击不参与），暂停后播放键自动回来。键盘用户按 Tab 聚焦时按钮仍会露出来，可以继续用 Enter 暂停/继续。
 - 滑出视口自动暂停、回到视口继续播（`IntersectionObserver`，阈值 12%），只对「用户本来就让它播」的封面生效。
 - 取不到视频时按钮自动消失，只剩静帧，不会白屏；
 - 按钮文案走 `content.js` 的 `playLabel`，四个封面各写了一句（「播放曲靖夜景」「播放山水」「播放田野」「播放秋收」）。
