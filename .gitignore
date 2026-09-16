@@ -1,0 +1,11 @@
+node_modules
+dist
+.DS_Store
+*.local
+public/_qa
+
+# 本地工作产物，不进仓库
+tmp/
+output/
+_qa/
+_ref-shandong/
