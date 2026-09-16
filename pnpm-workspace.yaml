@@ -1,6 +1,8 @@
 allowBuilds:
   esbuild: set this to true or false
+  workerd: set this to true or false
 verifyDepsBeforeRun: false
 strictDepBuilds: false
 onlyBuiltDependencies:
   - esbuild
+  - workerd

@@ -39,6 +39,25 @@ pnpm preview  # 预览构建产物 http://localhost:4173
 - 这台机器直连 github.com 不通，要走 Clash Verge 的本地代理（HTTP 端口 60471）。仓库的 git 配置里已经写了 `http.proxy=http://127.0.0.1:60471`，推送前把 Clash 的「系统代理」打开即可；以后换了代理端口，用 `git config http.proxy <新地址>` 改，不需要代理时 `git config --unset http.proxy`。CI 在 GitHub 的机器上跑，不受这个影响。
 - CI 里的 pnpm 版本固定在 `11.19.0`：低版本读不了 `pnpm-workspace.yaml` 里的新版字段，会在 `pnpm store path` 那步直接报 `packages field missing or empty`。
 
+### Cloudflare Pages（国内访问更快，当前主用）
+
+线上地址：**https://qujing.pages.dev/**
+
+```bash
+pnpm build
+pnpm deploy:pages   # = wrangler pages deploy dist --project-name=qujing --branch=main
+```
+
+用的是 Direct Upload（本地构建、直接传产物），不依赖 GitHub 集成，所以传上去的就是本地 `dist/` 的内容。项目名 `qujing`，生产分支 `main`。
+
+几个坑，已经踩过了：
+
+- 首次要登录：`node node_modules/wrangler/bin/wrangler.js login`，浏览器 OAuth，凭据存在 `%APPDATA%\xdg.config\.wrangler\`。
+- pnpm 默认拦截依赖的构建脚本，`workerd` 的原生模块会装不上，wrangler 直接 `MODULE_NOT_FOUND` 起不来；`pnpm-workspace.yaml` 的 `onlyBuiltDependencies` 里已放行 `workerd`。
+- wrangler 4.13x 会把 `pages project create` 委派给新的 Workers 静态资源流程，创建项目那一次必须带 `--force` 才会走 Pages 老流程。项目已经建好了，以后不用再跑这条。
+
+同一台机器直连实测（2026-09-16）：首页首字节 github.io 491ms / pages.dev 634ms，基本持平；但拉同一个 2.63MB 的视频，github.io 要 47–50 秒，pages.dev 只要 10–15 秒。国内访问 `*.pages.dev` 偶尔会 522 抖动，重试即可，绑自有域名会更稳。
+
 ## 页面结构
 
 | 区块 | 锚点 | 导航 | 内容 |
